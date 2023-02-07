@@ -1,0 +1,620 @@
+// converted by version 1.3
+// on Mon Feb 06 17:57:04 CET 2023
+
+.package AccessControllerApplet {
+	.aid 0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x1;
+	.version 1.0;
+
+	.imports {
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.3;		//javacard/framework
+		0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x2 1.0;		//share
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x2 1.3;		//javacard/security
+		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
+	}
+
+	.applet {
+		0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x1:0x0 AccessControllerAppletClass;
+	}
+
+	.constantPool {
+		// 0
+		instanceFieldRef boolean AccessControllerAppletClass/MASTER_PIN_AUTHENTICATED;
+		// 1
+		instanceFieldRef 0.9 AccessControllerAppletClass/pin;
+		// 2
+		classRef 0.9;		// javacard/framework/OwnerPIN
+		// 3
+		staticMethodRef 0.9.0(BB)V;		// javacard/framework/OwnerPIN.<init>(BB)V
+		// 4
+		staticMethodRef 0.3.0()V;		// javacard/framework/Applet.<init>()V
+		// 5
+		virtualMethodRef 0.9.8([BSB)V;		// update([BSB)V
+		// 6
+		virtualMethodRef 0.3.1()V;		// register()V
+		// 7
+		classRef AccessControllerAppletClass;
+		// 8
+		staticMethodRef AccessControllerAppletClass/<init>([BSB)V;
+		// 9
+		virtualMethodRef 0.9.2()B;		// getTriesRemaining()B
+		// 10
+		virtualMethodRef 0.9.5()V;		// reset()V
+		// 11
+		virtualMethodRef 0.10.1()[B;		// getBuffer()[B
+		// 12
+		virtualMethodRef 0.10.14()Z;		// isISOInterindustryCLA()Z
+		// 13
+		staticMethodRef 0.7.1(S)V;		// javacard/framework/ISOException.throwIt(S)V
+		// 14
+		virtualMethodRef AccessControllerAppletClass/verifyMasterPin(Ljavacard/framework/APDU;)Z;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 15
+		virtualMethodRef AccessControllerAppletClass/generateSecret(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 16
+		staticMethodRef 0.16.2([BS[BSS)S;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+		// 17
+		staticFieldRef byte[] AccessControllerAppletClass/ACRIds;
+		// 18
+		staticFieldRef boolean[] AccessControllerAppletClass/ACRFlags;
+		// 19
+		staticFieldRef byte[] AccessControllerAppletClass/secretTab;
+		// 20
+		staticFieldRef byte[] AccessControllerAppletClass/xorTab;
+		// 21
+		staticMethodRef 0.16.0([BS[BSS)B;		// javacard/framework/Util.arrayCompare([BS[BSS)B
+		// 22
+		virtualMethodRef 0.10.6()S;		// setIncomingAndReceive()S
+		// 23
+		staticMethodRef 2.14.0(B)Ljavacard/security/RandomData;;		// javacard/security/RandomData.getInstance(B)Ljavacard/security/RandomData;
+			.descriptor	Ljavacard/security/RandomData;	2.14;
+
+		// 24
+		virtualMethodRef 2.14.1([BSS)V;		// generateData([BSS)V
+		// 25
+		staticMethodRef 2.11.0(BZ)Ljavacard/security/MessageDigest;;		// javacard/security/MessageDigest.getInstance(BZ)Ljavacard/security/MessageDigest;
+			.descriptor	Ljavacard/security/MessageDigest;	2.11;
+
+		// 26
+		virtualMethodRef 2.11.1([BSS[BS)S;		// doFinal([BSS[BS)S
+		// 27
+		staticFieldRef byte[] AccessControllerAppletClass/hashTab;
+		// 28
+		virtualMethodRef 0.10.7()S;		// setOutgoing()S
+		// 29
+		virtualMethodRef 0.10.9(S)V;		// setOutgoingLength(S)V
+		// 30
+		virtualMethodRef 0.10.5([BSS)V;		// sendBytesLong([BSS)V
+		// 31
+		virtualMethodRef 0.9.1([BSB)Z;		// check([BSB)Z
+	}
+
+	.class public AccessControllerAppletClass 0 extends 0.3 {		// extends javacard/framework/Applet
+
+		.shareable;
+
+		.fields {
+			 0.9 pin 0;		// Ljavacard/framework/OwnerPIN;
+			private boolean MASTER_PIN_AUTHENTICATED 1;		// Z
+			static final byte AC_CLA = -128;		// B
+			static final byte VERIFY_PASSWD_INS = 2;		// B
+			static final byte GENERATE_SECRET_INS = 48;		// B
+			static final byte VERIFY_MASTER_PIN_INS = 33;		// B
+			private static byte[] secretTab;		// [B
+			private static byte[] hashTab;		// [B
+			private static byte[] xorTab;		// [B
+			private static final byte MAX_PASSWD_LENGTH = 10;		// B
+			static final short SW_VERIFICATION_FAILED = 25344;		// S
+			static final short SW_WRONG_PASSWORD = 25345;		// S
+			static final short SW_ID_NOT_FOUND = 25346;		// S
+			private static final byte MASTER_PIN_PARAM = -127;		// B
+			static final byte PIN_TRY_LIMIT = 3;		// B
+			static final byte MAX_PIN_LENGTH = 5;		// B
+			private static byte[] ACRIds = {69,27,120,60};		// [B
+			private static boolean[] ACRFlags = {1,1,1,0};		// [Z
+		}
+
+		.publicMethodTable 4 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+			getACRAuthorisation(Ljavacard/framework/APDU;)Z;
+			verifyPassword(Ljavacard/framework/APDU;)Z;
+			generateSecret(Ljavacard/framework/APDU;)V;
+			verifyMasterPin(Ljavacard/framework/APDU;)Z;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.implementedInterfaceInfoTable { 
+			.interface 0.2 { 		// javacard/framework/Shareable
+			}
+
+			.interface 1.0 { 		// share/AccessControllerAppletInterface
+				9;		// verifyPassword(Ljavacard/framework/APDU;)Z
+				8;		// getACRAuthorisation(Ljavacard/framework/APDU;)Z
+				11;		// verifyMasterPin(Ljavacard/framework/APDU;)Z
+			}
+
+		}
+
+		.method private <init>([BSB)V {
+			.stack 5;
+			.locals 3;
+
+				L0:	aload_0;
+					invokespecial 4;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					sconst_0;
+					putfield_b 0;		// boolean AccessControllerApplet/AccessControllerAppletClass.MASTER_PIN_AUTHENTICATED
+					aload_0;
+					new 2;		// javacard/framework/OwnerPIN
+					dup;
+					sconst_3;
+					sconst_5;
+					invokespecial 3;		// javacard/framework/OwnerPIN.<init>(BB)V
+					putfield_a 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+					aload_1;
+					sload_2;
+					baload;
+					sstore 4;
+					sload_2;
+					sload 4;
+					sadd;
+					sconst_1;
+					sadd;
+					sstore_2;
+					aload_1;
+					sload_2;
+					baload;
+					sstore 5;
+					sload_2;
+					sload 5;
+					sadd;
+					sconst_1;
+					sadd;
+					sstore_2;
+					aload_1;
+					sload_2;
+					baload;
+					sstore 6;
+					getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+					aload_1;
+					sload_2;
+					sconst_1;
+					sadd;
+					sload 6;
+					invokevirtual 5;		// update([BSB)V
+					aload_0;
+					invokevirtual 6;		// register()V
+					return;
+		}
+
+		.method public static install([BSB)V 0 {
+			.stack 4;
+			.locals 0;
+
+				L0:	new 7;		// AccessControllerApplet/AccessControllerAppletClass
+					aload_0;
+					sload_1;
+					sload_2;
+					invokespecial 8;		// AccessControllerApplet/AccessControllerAppletClass.<init>([BSB)V
+					return;
+		}
+
+		.method public select()Z 6 {
+			.stack 1;
+			.locals 0;
+
+				L0:	getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+					invokevirtual 9;		// getTriesRemaining()B
+					ifne L2;
+				L1:	sconst_0;
+					sreturn;
+				L2:	sconst_1;
+					sreturn;
+		}
+
+		.method public deselect()V 4 {
+			.stack 1;
+			.locals 0;
+
+				L0:	getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+					invokevirtual 10;		// reset()V
+					return;
+		}
+
+		.method public getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable; 5 {
+			.stack 1;
+			.locals 0;
+
+			.descriptor	Ljavacard/framework/AID;	0.6;
+			.descriptor	Ljavacard/framework/Shareable;	0.2;
+
+				L0:	aload_0;
+					areturn;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 2;
+			.locals 1;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 11;		// getBuffer()[B
+					astore_2;
+					aload_1;
+					invokevirtual 12;		// isISOInterindustryCLA()Z
+					ifeq L4;
+				L1:	aload_2;
+					sconst_1;
+					baload;
+					bspush -92;
+					if_scmpne L3;
+				L2:	return;
+				L3:	sspush 28160;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L4:	aload_2;
+					sconst_0;
+					baload;
+					bspush -128;
+					if_scmpeq L6;
+				L5:	sspush 28160;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L6:	aload_2;
+					sconst_1;
+					baload;
+					slookupswitch L13 2 33 L7 48 L10;
+				L7:	aload_2;
+					sconst_3;
+					baload;
+					bspush -127;
+					if_scmpne L9;
+				L8:	aload_0;
+					aload_1;
+					invokevirtual 14;		// verifyMasterPin(Ljavacard/framework/APDU;)Z
+					pop;
+					goto L14;
+				L9:	sspush 27392;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+					goto L14;
+				L10:	getfield_b_this 0;		// boolean AccessControllerApplet/AccessControllerAppletClass.MASTER_PIN_AUTHENTICATED
+					ifeq L12;
+				L11:	aload_0;
+					aload_1;
+					invokevirtual 15;		// generateSecret(Ljavacard/framework/APDU;)V
+					goto L14;
+				L12:	sspush 25344;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+					goto L14;
+				L13:	sspush 27904;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L14:	return;
+		}
+
+		.method public getACRAuthorisation(Ljavacard/framework/APDU;)Z 8 {
+			.stack 5;
+			.locals 4;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 11;		// getBuffer()[B
+					astore_2;
+					aload_2;
+					sconst_4;
+					baload;
+					sstore_3;
+					sload_3;
+					sconst_1;
+					if_scmpeq L2;
+				L1:	sspush 26368;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	sconst_1;
+					newarray 11;
+					astore 4;
+					aload_2;
+					sconst_5;
+					aload 4;
+					sconst_0;
+					sload_3;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					sconst_0;
+					sstore 5;
+					goto L9;
+				L3:	aload 4;
+					sconst_0;
+					baload;
+					sspush 255;
+					sand;
+					getstatic_a 17;		// reference AccessControllerApplet/AccessControllerAppletClass.ACRIds
+					sload 5;
+					baload;
+					if_scmpne L5;
+				L4:	sconst_1;
+					goto L6;
+				L5:	sconst_0;
+				L6:	ifeq L8;
+				L7:	getstatic_a 18;		// reference AccessControllerApplet/AccessControllerAppletClass.ACRFlags
+					sload 5;
+					baload;
+					sreturn;
+				L8:	sinc 5 1;
+				L9:	sload 5;
+					getstatic_a 17;		// reference AccessControllerApplet/AccessControllerAppletClass.ACRIds
+					arraylength;
+					if_scmplt L3;
+				L10:	sspush 25346;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+					sconst_0;
+					sreturn;
+		}
+
+		.method public verifyPassword(Ljavacard/framework/APDU;)Z 9 {
+			.stack 7;
+			.locals 7;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	sconst_0;
+					sstore_2;
+					aload_1;
+					invokevirtual 11;		// getBuffer()[B
+					astore_3;
+					aload_3;
+					sconst_4;
+					baload;
+					sstore 4;
+					sload 4;
+					bspush 10;
+					if_scmpeq L2;
+				L1:	sspush 26368;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	bspush 10;
+					newarray 11;
+					astore 5;
+					aload_3;
+					sconst_5;
+					aload 5;
+					sconst_0;
+					sload 4;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					getstatic_a 19;		// reference AccessControllerApplet/AccessControllerAppletClass.secretTab
+					astore 6;
+					aload 6;
+					arraylength;
+					newarray 11;
+					astore 7;
+					sconst_0;
+					sstore 8;
+					goto L4;
+				L3:	aload 7;
+					sload 8;
+					aload 6;
+					sload 8;
+					baload;
+					aload 5;
+					sload 8;
+					dup;
+					sconst_1;
+					sadd;
+					sstore 8;
+					baload;
+					sxor;
+					bastore;
+					sinc 8 1;
+				L4:	sload 8;
+					bspush 10;
+					if_scmplt L3;
+				L5:	bspush 20;
+					newarray 11;
+					astore 8;
+					aload 7;
+					sconst_0;
+					getstatic_a 20;		// reference AccessControllerApplet/AccessControllerAppletClass.xorTab
+					sconst_0;
+					getstatic_a 20;		// reference AccessControllerApplet/AccessControllerAppletClass.xorTab
+					arraylength;
+					invokestatic 21;		// javacard/framework/Util.arrayCompare([BS[BSS)B
+					ifne L7;
+				L6:	sconst_1;
+					sstore_2;
+				L7:	sload_2;
+					sreturn;
+		}
+
+		.method public generateSecret(Ljavacard/framework/APDU;)V 10 {
+			.stack 7;
+			.locals 10;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 11;		// getBuffer()[B
+					astore_2;
+					aload_2;
+					sconst_4;
+					baload;
+					sstore_3;
+					aload_1;
+					invokevirtual 22;		// setIncomingAndReceive()S
+					s2b;
+					sstore 4;
+					sload_3;
+					bspush 10;
+					if_scmpne L2;
+				L1:	sload 4;
+					bspush 10;
+					if_scmpeq L3;
+				L2:	sspush 26368;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L3:	bspush 10;
+					newarray 11;
+					astore 5;
+					aload_2;
+					sconst_5;
+					aload 5;
+					sconst_0;
+					sload_3;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					bspush 10;
+					newarray 11;
+					astore 6;
+					sconst_1;
+					invokestatic 23;		// javacard/security/RandomData.getInstance(B)Ljavacard/security/RandomData;
+					astore 7;
+					aload 7;
+					aload 6;
+					sconst_0;
+					aload 6;
+					arraylength;
+					invokevirtual 24;		// generateData([BSS)V
+					aload 6;
+					arraylength;
+					newarray 11;
+					astore 8;
+					sconst_0;
+					sstore 9;
+					goto L5;
+				L4:	aload 8;
+					sload 9;
+					aload 6;
+					sload 9;
+					baload;
+					aload 5;
+					sload 9;
+					dup;
+					sconst_1;
+					sadd;
+					sstore 9;
+					baload;
+					sxor;
+					bastore;
+					sinc 9 1;
+				L5:	sload 9;
+					bspush 10;
+					if_scmplt L4;
+				L6:	bspush 20;
+					newarray 11;
+					astore 9;
+					sconst_1;
+					sconst_0;
+					invokestatic 25;		// javacard/security/MessageDigest.getInstance(BZ)Ljavacard/security/MessageDigest;
+					astore 10;
+					aload 10;
+					aload 8;
+					sconst_0;
+					aload 8;
+					arraylength;
+					aload 9;
+					sconst_0;
+					invokevirtual 26;		// doFinal([BSS[BS)S
+					pop;
+					aload 6;
+					arraylength;
+					newarray 11;
+					putstatic_a 19;		// reference AccessControllerApplet/AccessControllerAppletClass.secretTab
+					aload 9;
+					arraylength;
+					newarray 11;
+					putstatic_a 27;		// reference AccessControllerApplet/AccessControllerAppletClass.hashTab
+					aload 8;
+					arraylength;
+					newarray 11;
+					putstatic_a 20;		// reference AccessControllerApplet/AccessControllerAppletClass.xorTab
+					aload 6;
+					sconst_0;
+					getstatic_a 19;		// reference AccessControllerApplet/AccessControllerAppletClass.secretTab
+					sconst_0;
+					aload 6;
+					arraylength;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload 9;
+					sconst_0;
+					getstatic_a 27;		// reference AccessControllerApplet/AccessControllerAppletClass.hashTab
+					sconst_0;
+					aload 9;
+					arraylength;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload 8;
+					sconst_0;
+					getstatic_a 20;		// reference AccessControllerApplet/AccessControllerAppletClass.xorTab
+					sconst_0;
+					aload 8;
+					arraylength;
+					invokestatic 16;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_1;
+					invokevirtual 28;		// setOutgoing()S
+					sstore 11;
+					getstatic_a 27;		// reference AccessControllerApplet/AccessControllerAppletClass.hashTab
+					arraylength;
+					sload 11;
+					if_scmpge L8;
+				L7:	getstatic_a 27;		// reference AccessControllerApplet/AccessControllerAppletClass.hashTab
+					arraylength;
+					sstore 11;
+				L8:	aload_1;
+					sload 11;
+					invokevirtual 29;		// setOutgoingLength(S)V
+					aload_1;
+					getstatic_a 27;		// reference AccessControllerApplet/AccessControllerAppletClass.hashTab
+					sconst_0;
+					sload 11;
+					invokevirtual 30;		// sendBytesLong([BSS)V
+					aload_0;
+					sconst_0;
+					putfield_b 0;		// boolean AccessControllerApplet/AccessControllerAppletClass.MASTER_PIN_AUTHENTICATED
+					return;
+		}
+
+		.method public verifyMasterPin(Ljavacard/framework/APDU;)Z 11 {
+			.stack 4;
+			.locals 2;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 11;		// getBuffer()[B
+					astore_2;
+					aload_2;
+					sconst_4;
+					baload;
+					sstore_3;
+					sload_3;
+					sconst_5;
+					if_scmpeq L2;
+				L1:	sspush 26368;
+					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+					aload_2;
+					sconst_5;
+					sload_3;
+					invokevirtual 31;		// check([BSB)Z
+					ifne L4;
+				L3:	sconst_0;
+					sreturn;
+				L4:	aload_0;
+					sconst_1;
+					putfield_b 0;		// boolean AccessControllerApplet/AccessControllerAppletClass.MASTER_PIN_AUTHENTICATED
+					sconst_1;
+					sreturn;
+		}
+
+	}
+
+}
