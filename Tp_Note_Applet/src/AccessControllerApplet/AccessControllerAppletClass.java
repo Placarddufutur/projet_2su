@@ -13,7 +13,7 @@ public class AccessControllerAppletClass extends Applet implements AccessControl
 	// INS codes
 	final static byte VERIFY_PASSWD_INS = (byte) 0x02;
 	final static byte GENERATE_SECRET_INS = (byte) 0x30;
-	final static byte VERIFY_MASTER_PIN_INS = (byte) 0x20;
+	final static byte VERIFY_MASTER_PIN_INS = (byte) 0x21;
 
 	// Password generation & storage
 	private static byte[] secretTab;
@@ -267,19 +267,19 @@ public class AccessControllerAppletClass extends Applet implements AccessControl
 	 *        administrator through a master PIN
 	 * @param apdu the APDU buffer
 	 */
-	private void verifyMasterPin(APDU apdu) {
+	public boolean verifyMasterPin(APDU apdu) {
+
 		byte[] buffer = apdu.getBuffer();
 
 		byte numBytes = buffer[ISO7816.OFFSET_LC];
 
-		byte byteRead = (byte) (apdu.setIncomingAndReceive());
-
-		if ((numBytes != MAX_PIN_LENGTH) || (byteRead != MAX_PIN_LENGTH))
+		if ((numBytes != MAX_PIN_LENGTH))
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-
-		if (pin.check(buffer, ISO7816.OFFSET_CDATA, byteRead) == false)
-			ISOException.throwIt(SW_VERIFICATION_FAILED);
+		
+		if (pin.check(buffer, ISO7816.OFFSET_CDATA, numBytes) == false)
+			return false;
 		else
 			MASTER_PIN_AUTHENTICATED = true;
+			return true;
 	}
 }

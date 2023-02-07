@@ -22,13 +22,20 @@ public class ClientClass {
 	// APDU INS
 	public static final byte CP_CLA = (byte) 0x80;
 	public static final byte VERIFY_USER_PIN_INS = (byte) 0x20;
+	public static final byte VERIFY_MASTER_PIN_INS = (byte) 0x21;
 	public static final byte VERIFY_PASSWD_INS = (byte) 0x02;
 	private static final byte AUTHORIZATION_ROOM_INS = (byte) 0x04;
+	private static final byte WALLET_ACCESS_INS = (byte) 0x05;
+	private static final byte WALLET_GET_BALANCE = (byte) 0x50;	
 	public static final byte USER_PIN_PARAM = (byte) 0x82;
+	public static final byte MASTER_PIN_PARAM = (byte) 0x81;
+	public static final byte DEBIT_COMMAND = (byte) 0x01;
+	public static final byte CREDIT_COMMAND = (byte) 0x02;
 
 	// ACR
 	private static Hashtable<Byte, String> ACRTable = new Hashtable<>();
 	final static byte[] UNLOCK_DOOR_CODE = { 0x64, 0x44 };
+	final static byte[] TRANSACTION_ANSWER = { 0x65, 0x45 };
 	
 	public static CadT1Client cad;
 
@@ -44,16 +51,19 @@ public class ClientClass {
 
 		/* ---------------- Javacard connexion ---------------- */
 
+		boolean connexionEstablished = false;
 		Socket sckCarte;
-		try {
-			sckCarte = new Socket("localhost", 9025);
-			sckCarte.setTcpNoDelay(true);
-			BufferedInputStream input = new BufferedInputStream(sckCarte.getInputStream());
-			BufferedOutputStream output = new BufferedOutputStream(sckCarte.getOutputStream());
-			cad = new CadT1Client(input, output);
-		} catch (Exception e) {
-			System.out.println("Erreur : impossible de se connecter à la Javacard");
-			return;
+		System.out.println("En attente de connexion...");
+		while (!connexionEstablished) {
+			try {
+				sckCarte = new Socket("localhost", 9025);
+				sckCarte.setTcpNoDelay(true);
+				BufferedInputStream input = new BufferedInputStream(sckCarte.getInputStream());
+				BufferedOutputStream output = new BufferedOutputStream(sckCarte.getOutputStream());
+				cad = new CadT1Client(input, output);
+				connexionEstablished = true;
+			} catch (Exception e) {
+			}
 		}
 
 		try {
@@ -61,6 +71,60 @@ public class ClientClass {
 		} catch (Exception e) {
 			System.out.println("Erreur lors de l'envoi de la commande \"Powerup\" à la Javacard");
 			return;
+		}
+		
+		byte userOrMasterIns = 0x00;
+		byte userOrMasterPin = 0x00;
+		boolean userChosen = false;
+		boolean isMaster = false;
+		while (!userChosen) {
+
+			System.out.println();
+			System.out.println("Client Javacard - Projet d'option");
+			System.out.println("----------------------------");
+			System.out.println();
+			System.out.format("Selectionnez l'utilisateur sous lequel vous voulez vous connecter : \n\n");	
+		
+			// Displaying options
+			System.out.println("\t-> 1 - Administrateur");
+			System.out.println("\t-> 2 - Utilisateur");
+			
+			System.out.println("Choix : ");
+			
+			@SuppressWarnings("resource")
+			Scanner sc = new Scanner(System.in);
+			String inputId = sc.nextLine();
+			
+			//Option input validation
+			boolean isChoiceValid = false;
+			int choice=0;
+			try {
+				choice = Integer.parseInt(inputId);
+				if (choice > 0 && choice < 4)
+					isChoiceValid = true;
+			} catch (NumberFormatException e) {
+				isChoiceValid = false;
+			}
+			
+			if (isChoiceValid) {
+				if (choice == 1) {
+					userChosen = true;
+					userOrMasterPin = MASTER_PIN_PARAM;
+					userOrMasterIns = VERIFY_MASTER_PIN_INS;
+					isMaster = true;
+				}
+				else if (choice == 2) {
+					userChosen = true;
+					userOrMasterPin = USER_PIN_PARAM;
+					userOrMasterIns = VERIFY_USER_PIN_INS;
+					isMaster = false;
+				}
+				else {
+					System.out.println("Erreur : Choix incorrect");
+				}
+			} else {
+				System.out.println("Erreur : Choix incorrect");
+			}
 		}
 
 		/* ---------------- UI ---------------- */
@@ -104,9 +168,9 @@ public class ClientClass {
 				/* PIN transmission to UnLockApplet */
 				apdu = new Apdu();
 				apdu.command[Apdu.CLA] = ClientClass.CP_CLA;
-				apdu.command[Apdu.INS] = ClientClass.VERIFY_USER_PIN_INS;
+				apdu.command[Apdu.INS] = userOrMasterIns;
 				apdu.command[Apdu.P1] = 0x00;
-				apdu.command[Apdu.P2] = ClientClass.USER_PIN_PARAM;
+				apdu.command[Apdu.P2] = userOrMasterPin;
 
 				// Putting PIN into data format
 				byte[] inputPinBytes = new byte[ClientClass.MAX_PIN_LENGTH];
@@ -201,12 +265,14 @@ public class ClientClass {
 			System.out.println("Client Javacard - Projet d'option");
 			System.out.println("----------------------------");
 			System.out.println();
-			System.out.format("Selectionnez le service qui vous intéresse : \n\n");	
+			System.out.format("Selectionnez le service qui vous intéresse :Recharger \n\n");	
 		
 			// Displaying options
 			System.out.println("\t-> 1 - Appel en cours");
 			System.out.println("\t-> 2 - Ouverture de salle");
 			System.out.println("\t-> 3 - Paiement au RU");
+			if (isMaster)
+				System.out.println("\t-> 4 - Créditer carte RU");
 			
 			System.out.println("Choix : ");
 			
@@ -219,7 +285,7 @@ public class ClientClass {
 			int choice=0;
 			try {
 				choice = Integer.parseInt(inputId);
-				if (choice > 0 && choice < 4)
+				if (choice > 0 && choice < 5)
 					isChoiceValid = true;
 			} catch (NumberFormatException e) {
 				isChoiceValid = false;
@@ -235,6 +301,8 @@ public class ClientClass {
 				else if (choice == 3) {
 					callPaymentRU();
 				}
+				else if (choice == 4 && isMaster)
+					callCreditingRU();
 				else {
 					System.out.println("Erreur : Choix incorrect");
 				}
@@ -260,7 +328,7 @@ public class ClientClass {
 
 		
 		System.out.println();
-		System.out.println("Client Javacard - Projet d'option");
+		System.out.println("Client Javacard - Projet d'option - Ouverture de porte");
 		System.out.println("----------------------------");
 		System.out.println();
 		System.out.format("Selectionnez une salle à ouvrir parmi les suivantes : \n\n", ClientClass.MAX_PASSWD_LENGTH);
@@ -347,8 +415,110 @@ public class ClientClass {
 	
 	}
 	
-	public static void callPaymentRU() {
+	public static void callPaymentRU() throws IOException, CadTransportException {
 		
+		System.out.println();
+		System.out.println("Client Javacard - Projet d'option - Paiement au RU");
+		System.out.println("----------------------------");
+		System.out.println();
+		System.out.format("Indiquez le nombre de points du repas : \n\n", ClientClass.MAX_PASSWD_LENGTH);
+
+		@SuppressWarnings("resource")
+		Scanner sc = new Scanner(System.in);
+		String inputId = sc.nextLine();		
+		
+		// Option input validation
+		boolean isChoiceValid = false;
+		try {
+			int choice = Integer.parseInt(inputId);
+			if (choice > 0 && choice <= 127)
+				isChoiceValid = true;
+		} catch (NumberFormatException e) {
+			isChoiceValid = false;
+		}
+		if (isChoiceValid) {
+			byte choice = (byte) Integer.parseInt(inputId);
+			
+			System.out.println("Demande de débit en cours...");
+			
+			/* UnLockApplet Selection */
+			Apdu apdu = new Apdu();
+			apdu.command[Apdu.CLA] = 0x00;
+			apdu.command[Apdu.INS] = (byte) 0xA4;
+			apdu.command[Apdu.P1] = 0x04;
+			apdu.command[Apdu.P2] = 0x00;
+
+			byte[] UnLockAppletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00 };
+
+			apdu.setDataIn(UnLockAppletAID);
+
+			cad.exchangeApdu(apdu);
+			if (apdu.getStatus() != 0x9000) {
+				System.out.println("Erreur : impossible de sélectionner l'applet UnLockApplet");
+				System.exit(1);
+			}
+			
+			/* Transmitting ID to UnLockApplet */
+			apdu = new Apdu();
+			apdu.command[Apdu.CLA] = ClientClass.CP_CLA;
+			apdu.command[Apdu.INS] = ClientClass.WALLET_ACCESS_INS;
+			apdu.command[Apdu.P1] = 0x00;
+			apdu.command[Apdu.P2] = DEBIT_COMMAND;
+
+			// Adding padding to input password
+			byte[] amountArray = { choice };
+			apdu.setDataIn(amountArray, amountArray.length);
+			cad.exchangeApdu(apdu);
+			
+			if (apdu.getStatus() != 0x9000 && apdu.getStatus() != 0x6d00) {
+				System.out.println("Erreur : transaction impossible ! ");
+			} else {
+				if (Arrays.equals(apdu.dataOut, TRANSACTION_ANSWER)) {
+					
+					System.out.println("===============\n" + "Repas à " + (int) choice + " points débité !\n"
+					+ "===============\n");
+					
+					apdu = new Apdu();
+					apdu.command[Apdu.CLA] = 0x00;
+					apdu.command[Apdu.INS] = (byte) 0xA4;
+					apdu.command[Apdu.P1] = 0x04;
+					apdu.command[Apdu.P2] = 0x00;
+
+					byte[] WalletRUAppletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x00 };
+
+					apdu.setDataIn(WalletRUAppletAID);
+
+					cad.exchangeApdu(apdu);
+					if (apdu.getStatus() != 0x9000) {
+						System.out.println("Erreur : impossible de sélectionner l'applet UnLockApplet");
+						System.exit(1);
+					}
+					
+					apdu = new Apdu();
+					apdu.command[Apdu.CLA] = ClientClass.CP_CLA;
+					apdu.command[Apdu.INS] = ClientClass.WALLET_GET_BALANCE;
+					apdu.command[Apdu.P1] = 0x00;
+					apdu.command[Apdu.P2] = 0x00;
+
+					// Adding padding to input password
+					cad.exchangeApdu(apdu);
+					
+					if (apdu.getStatus() != 0x9000 && apdu.getStatus() != 0x6d00) {
+						System.out.println("Erreur : transaction impossible ! ");
+					} else {
+						System.out.println("===============\n" + "Montant restant sur la carte : " + balanceToEuros(apdu.dataOut) + "€.\n"
+							+ "===============\n");
+					}
+				} else
+					System.out.println("Erreur : Mauvaise R-APDU concernant l'accès au porte-monnaie électronique");
+			}
+			System.out.println("Débug : " + apdu);
+
+		} else {
+			System.out
+					.println("Option invalide, entrez un nombre de points entre 1 et 127 !\n");
+		}
+			
 	}
 
 	public static String byteArrayToHex(byte[] a) {
@@ -356,6 +526,126 @@ public class ClientClass {
 		for (byte b : a)
 			sb.append(String.format("%02x", b));
 		return sb.toString();
+	}
+	
+	public static double balanceToEuros(byte[] a) {
+	    int result = 0;
+	    for (int i = 0; i < a.length; i++) {
+	        result = (result << 8) | (a[i] & 0xff);
+	    }
+	    return result/100.0;
+	}
+	
+	public static byte[] eurosToBalance(double euroCents) {
+	    int euros = (int) Math.round(euroCents * 100);
+	    byte[] result = new byte[2];
+	    result[1] = (byte) (euros & 0xff);
+	    result[0] = (byte) ((euros >> 8) & 0xff);
+	    return result;
+	}
+	
+	public static void callCreditingRU() throws IOException, CadTransportException {
+		System.out.println();
+		System.out.println("Client Javacard - Projet d'option - Paiement au RU");
+		System.out.println("----------------------------");
+		System.out.println();
+		System.out.format("Indiquez le montant à créditer en € : \n\n", ClientClass.MAX_PASSWD_LENGTH);
+
+		@SuppressWarnings("resource")
+		Scanner sc = new Scanner(System.in);
+		String inputId = sc.nextLine();		
+		
+		// Option input validation
+		boolean isChoiceValid = false;
+		try {
+			double choice = Double.valueOf(inputId);
+			if (choice > 0.0 && choice <= 327.67)
+				isChoiceValid = true;
+		} catch (NumberFormatException e) {
+			isChoiceValid = false;
+		}
+		if (isChoiceValid) {
+			double interChoice = Double.valueOf(inputId);
+			byte[] choice = eurosToBalance(interChoice);
+			
+			System.out.println("Demande de crédit en cours...");
+			
+			/* UnLockApplet Selection */
+			Apdu apdu = new Apdu();
+			apdu.command[Apdu.CLA] = 0x00;
+			apdu.command[Apdu.INS] = (byte) 0xA4;
+			apdu.command[Apdu.P1] = 0x04;
+			apdu.command[Apdu.P2] = 0x00;
+
+			byte[] UnLockAppletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00 };
+
+			apdu.setDataIn(UnLockAppletAID);
+
+			cad.exchangeApdu(apdu);
+			if (apdu.getStatus() != 0x9000) {
+				System.out.println("Erreur : impossible de sélectionner l'applet UnLockApplet");
+				System.exit(1);
+			}
+			
+			/* Transmitting ID to UnLockApplet */
+			apdu = new Apdu();
+			apdu.command[Apdu.CLA] = ClientClass.CP_CLA;
+			apdu.command[Apdu.INS] = ClientClass.WALLET_ACCESS_INS;
+			apdu.command[Apdu.P1] = 0x00;
+			apdu.command[Apdu.P2] = CREDIT_COMMAND;
+
+			// Adding padding to input password
+			apdu.setDataIn(choice, choice.length);
+			cad.exchangeApdu(apdu);
+			
+			if (apdu.getStatus() != 0x9000 && apdu.getStatus() != 0x6d00) {
+				System.out.println("Erreur : transaction impossible ! ");
+			} else {
+				if (Arrays.equals(apdu.dataOut, TRANSACTION_ANSWER)) {
+					
+					System.out.println("===============\n" + "Carte créditée de " + interChoice + " € !\n"
+					+ "===============\n");
+					
+					apdu = new Apdu();
+					apdu.command[Apdu.CLA] = 0x00;
+					apdu.command[Apdu.INS] = (byte) 0xA4;
+					apdu.command[Apdu.P1] = 0x04;
+					apdu.command[Apdu.P2] = 0x00;
+
+					byte[] WalletRUAppletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x00 };
+
+					apdu.setDataIn(WalletRUAppletAID);
+
+					cad.exchangeApdu(apdu);
+					if (apdu.getStatus() != 0x9000) {
+						System.out.println("Erreur : impossible de sélectionner l'applet UnLockApplet");
+						System.exit(1);
+					}
+					
+					apdu = new Apdu();
+					apdu.command[Apdu.CLA] = ClientClass.CP_CLA;
+					apdu.command[Apdu.INS] = ClientClass.WALLET_GET_BALANCE;
+					apdu.command[Apdu.P1] = 0x00;
+					apdu.command[Apdu.P2] = 0x00;
+
+					// Adding padding to input password
+					cad.exchangeApdu(apdu);
+					
+					if (apdu.getStatus() != 0x9000 && apdu.getStatus() != 0x6d00) {
+						System.out.println("Erreur : transaction impossible ! ");
+					} else {
+						System.out.println("===============\n" + "Montant actuel sur la carte après créditement : " + balanceToEuros(apdu.dataOut) + "€.\n"
+							+ "===============\n");
+					}
+				} else
+					System.out.println("Erreur : Mauvaise R-APDU concernant l'accès au porte-monnaie électronique");
+			}
+			System.out.println("Débug : " + apdu);
+
+		} else {
+			System.out
+					.println("Option invalide, entrez un montant entre 0 et 327.67€ !\n");
+		}
 	}
 
 }

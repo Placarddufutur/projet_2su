@@ -1,8 +1,10 @@
 package UnLockApplet;
 
 import share.AccessControllerAppletInterface;
+import share.WalletRUAppletInterface;
 import share.ActionAppletInterface;
 import javacard.framework.*;
+import java.*;
 
 public class UnLockAppletClass extends Applet {
 
@@ -13,38 +15,52 @@ public class UnLockAppletClass extends Applet {
 	// INS Codes
 	private static final byte SEND_PASSWORD_INS = (byte) 0x02;
 	private static final byte VERIFY_USER_PIN_INS = (byte) 0x20;
+	private static final byte VERIFY_MASTER_PIN_INS = (byte) 0x21;
 	private static final byte AUTHORIZATION_ROOM_INS = (byte) 0x04;
+	private static final byte AUTHORIZATION_WALLET_INS = (byte) 0x05;
 
 	// Interface
 	private AccessControllerAppletInterface AccessControllerIf;
 	private ActionAppletInterface ActionIf;
+	private WalletRUAppletInterface WalletIf;
 
 	// PIN Handling
+	private static final byte DEBIT_COMMAND = (byte) 0x01;
+	private static final byte CREDIT_COMMAND = (byte) 0x02;
+	private static final byte MASTER_PIN_PARAM = (byte) 0x81;
 	private static final byte USER_PIN_PARAM = (byte) 0x82;
 	private static final byte MAX_PIN_LENGTH = 0x05;
 	public static final byte MAX_PASSWD_LENGTH = 0x0a;
 	final static byte PIN_TRY_LIMIT = (byte) 0x64;
 	final static byte MAX_PIN_SIZE = (byte) 0x05;
+	final static byte BALANCE_SIZE = (byte) 0x02; 
 	OwnerPIN pin;
 
+
 	// Auth consts
-	private boolean PIN_AUTHENTICATION_SUCCESS = false;
+	private boolean MASTER_PIN_AUTHENTIFIED = false;
+	private boolean USER_PIN_AUTHENTIFIED = false;
 	private boolean PASSWD_AUTHENTICATION_SUCCESS = false;
-	private boolean ROOM_AUTHORIZATION_SUCESS = false;
+	private boolean ROOM_AUTHORIZATION_SUCCESS = false;
+	private boolean WALLET_AUTHORIZATION_SUCCESS = false;
 
 	// Auth verification errors
 	final static short SW_VERIFICATION_FAILED = 0x6300;
 	final static short SW_WRONG_PASSWORD = 0x6301;
 	final static short SW_UNAUTHORIZED_ACCESS = 0x6303;
+	final static short SW_INTERFACE_ISSUE = 0x6304;
 
 	// Room consts
 	final static byte[] UNLOCK_DOOR_CODE = { 0x64, 0x44 };
+	final static byte[] TRANSACTION_ANSWER = { 0x65, 0x45 };
+	
 
 	/* instance variables declaration */
 	private UnLockAppletClass(byte[] bArray, short bOffset, byte bLength) {
 
 		AccessControllerIf = null;
 		ActionIf = null;
+		WalletIf = null;
 
 		// It is good programming practice to allocate
 		// all the memory that an applet needs during
@@ -82,12 +98,18 @@ public class UnLockAppletClass extends Applet {
 		case VERIFY_USER_PIN_INS:
 			if (buffer[ISO7816.OFFSET_P2] == USER_PIN_PARAM)
 				verifyUserPin(apdu);
+			else 
+				ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
+			break;
+		case VERIFY_MASTER_PIN_INS:
+			if (buffer[ISO7816.OFFSET_P2] == MASTER_PIN_PARAM)
+				verifyMasterPin(apdu);
 			else
 				ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
 			break;
 		// second auth step
 		case SEND_PASSWORD_INS:
-			if (PIN_AUTHENTICATION_SUCCESS)
+			if (USER_PIN_AUTHENTIFIED || MASTER_PIN_AUTHENTIFIED)
 				sendPassword(apdu);
 			else
 				ISOException.throwIt(SW_VERIFICATION_FAILED);
@@ -99,6 +121,11 @@ public class UnLockAppletClass extends Applet {
 			else
 				ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
 			break;
+		case AUTHORIZATION_WALLET_INS:
+			if (PASSWD_AUTHENTICATION_SUCCESS)
+				sendAuthorizationWalletRequest(apdu);
+			else
+				ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
@@ -121,10 +148,36 @@ public class UnLockAppletClass extends Applet {
 		if ((numBytes != MAX_PIN_LENGTH) || (byteRead != MAX_PIN_LENGTH))
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 
-		if (pin.check(buffer, ISO7816.OFFSET_CDATA, byteRead) == false)
+		if (pin.check(buffer, ISO7816.OFFSET_CDATA, byteRead) == false) 
 			ISOException.throwIt(SW_VERIFICATION_FAILED);
 		else
-			PIN_AUTHENTICATION_SUCCESS = true;
+			USER_PIN_AUTHENTIFIED = true;
+	}
+	
+	
+	private void verifyMasterPin(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+
+		byte numBytes = buffer[ISO7816.OFFSET_LC];
+
+		byte byteRead = (byte) (apdu.setIncomingAndReceive());
+
+		if ((numBytes != MAX_PIN_LENGTH) || (byteRead != MAX_PIN_LENGTH))
+			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+		
+		byte[] AccessControllerAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x01, 0x00 };
+		AID AccessControllerAIDObject = new AID(AccessControllerAID, (short) 0, (byte) AccessControllerAID.length);
+		
+		if (AccessControllerIf == null) {
+			AccessControllerIf = (AccessControllerAppletInterface) JCSystem.getAppletShareableInterfaceObject(AccessControllerAIDObject, (byte) 0);
+		}
+		if (AccessControllerIf == null) // if getting applet crashed
+			ISOException.throwIt(ISO7816.SW_APPLET_SELECT_FAILED);
+		
+		if (AccessControllerIf.verifyMasterPin(apdu)) {
+			MASTER_PIN_AUTHENTIFIED = true;
+		} else
+			ISOException.throwIt(SW_VERIFICATION_FAILED);
 	}
 
 	/**
@@ -173,10 +226,55 @@ public class UnLockAppletClass extends Applet {
 			ISOException.throwIt(ISO7816.SW_APPLET_SELECT_FAILED);
 
 		if (ActionIf.sendACRRequest(apdu)) {
-			ROOM_AUTHORIZATION_SUCESS = true;
+			ROOM_AUTHORIZATION_SUCCESS = true;
 			doUnlockAction(apdu);
 		} else
 			ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
+	}
+	
+	private void sendAuthorizationWalletRequest(APDU apdu) {
+		
+		byte[] buffer = apdu.getBuffer();
+		
+		if (buffer[ISO7816.OFFSET_P2] == DEBIT_COMMAND) {
+			byte[] WalletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x00 };
+			AID WalletAIDObject = new AID(WalletAID, (short) 0, (byte) WalletAID.length);
+			
+			if (WalletIf == null)
+				WalletIf = (WalletRUAppletInterface) JCSystem.getAppletShareableInterfaceObject(WalletAIDObject, (byte) 0);
+	
+			if (WalletIf == null)
+				ISOException.throwIt(ISO7816.SW_APPLET_SELECT_FAILED);
+				
+			if (WalletIf.sendTransactionRequest(apdu)) {
+				WALLET_AUTHORIZATION_SUCCESS = true;
+				doTransactionWallet(apdu);
+			} else
+				ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
+		}
+		else if (buffer[ISO7816.OFFSET_P2] == CREDIT_COMMAND) {
+			if (MASTER_PIN_AUTHENTIFIED) {
+				byte[] WalletAID = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x04, 0x00 };
+				AID WalletAIDObject = new AID(WalletAID, (short) 0, (byte) WalletAID.length);
+				
+				if (WalletIf == null)
+					WalletIf = (WalletRUAppletInterface) JCSystem.getAppletShareableInterfaceObject(WalletAIDObject, (byte) 0);
+		
+				if (WalletIf == null)
+					ISOException.throwIt(ISO7816.SW_APPLET_SELECT_FAILED);
+				
+				if (WalletIf.sendTransactionRequest(apdu)) {
+					WALLET_AUTHORIZATION_SUCCESS = true;
+					doTransactionWallet(apdu);
+				} else
+					ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
+			} else {
+				ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
+			}
+		}
+		else {
+			ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
+		}
 	}
 
 	/**
@@ -184,7 +282,7 @@ public class UnLockAppletClass extends Applet {
 	 * @param apdu
 	 */
 	private void doUnlockAction(APDU apdu) {
-		if (ROOM_AUTHORIZATION_SUCESS) {
+		if (ROOM_AUTHORIZATION_SUCCESS) {
 			
 			// sending back a special door code to assure the client that the user is authenticated
 			short le = apdu.setOutgoing();
@@ -194,6 +292,19 @@ public class UnLockAppletClass extends Applet {
 		} else {
 			ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
 		}
-		return;
+	}
+	
+	
+	private void doTransactionWallet(APDU apdu) {
+		
+		if (WALLET_AUTHORIZATION_SUCCESS) {
+			short le = apdu.setOutgoing();
+			le = (short) TRANSACTION_ANSWER.length; // contains a validation code + the new balance after transaction
+			apdu.setOutgoingLength(le);
+			apdu.sendBytesLong(TRANSACTION_ANSWER, (short) 0, le);
+	        // ISOException.throwIt((short) 0x5555);
+		} else {
+			ISOException.throwIt(SW_UNAUTHORIZED_ACCESS);
+		}
 	}
 }

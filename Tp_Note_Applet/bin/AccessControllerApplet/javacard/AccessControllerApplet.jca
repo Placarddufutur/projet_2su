@@ -1,5 +1,5 @@
 // converted by version 1.3
-// on Tue Jan 31 16:08:47 CET 2023
+// on Mon Feb 06 17:57:04 CET 2023
 
 .package AccessControllerApplet {
 	.aid 0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x1;
@@ -46,7 +46,7 @@
 		// 13
 		staticMethodRef 0.7.1(S)V;		// javacard/framework/ISOException.throwIt(S)V
 		// 14
-		staticMethodRef AccessControllerAppletClass/verifyMasterPin(Ljavacard/framework/APDU;)V;
+		virtualMethodRef AccessControllerAppletClass/verifyMasterPin(Ljavacard/framework/APDU;)Z;
 			.descriptor	Ljavacard/framework/APDU;	0.10;
 
 		// 15
@@ -101,7 +101,7 @@
 			static final byte AC_CLA = -128;		// B
 			static final byte VERIFY_PASSWD_INS = 2;		// B
 			static final byte GENERATE_SECRET_INS = 48;		// B
-			static final byte VERIFY_MASTER_PIN_INS = 32;		// B
+			static final byte VERIFY_MASTER_PIN_INS = 33;		// B
 			private static byte[] secretTab;		// [B
 			private static byte[] hashTab;		// [B
 			private static byte[] xorTab;		// [B
@@ -128,6 +128,7 @@
 			getACRAuthorisation(Ljavacard/framework/APDU;)Z;
 			verifyPassword(Ljavacard/framework/APDU;)Z;
 			generateSecret(Ljavacard/framework/APDU;)V;
+			verifyMasterPin(Ljavacard/framework/APDU;)Z;
 		}
 
 		.packageMethodTable 0 {
@@ -140,6 +141,7 @@
 			.interface 1.0 { 		// share/AccessControllerAppletInterface
 				9;		// verifyPassword(Ljavacard/framework/APDU;)Z
 				8;		// getACRAuthorisation(Ljavacard/framework/APDU;)Z
+				11;		// verifyMasterPin(Ljavacard/framework/APDU;)Z
 			}
 
 		}
@@ -271,7 +273,7 @@
 				L6:	aload_2;
 					sconst_1;
 					baload;
-					slookupswitch L13 2 32 L7 48 L10;
+					slookupswitch L13 2 33 L7 48 L10;
 				L7:	aload_2;
 					sconst_3;
 					baload;
@@ -279,7 +281,8 @@
 					if_scmpne L9;
 				L8:	aload_0;
 					aload_1;
-					invokespecial 14;		// AccessControllerApplet/AccessControllerAppletClass.verifyMasterPin(Ljavacard/framework/APDU;)V
+					invokevirtual 14;		// verifyMasterPin(Ljavacard/framework/APDU;)Z
+					pop;
 					goto L14;
 				L9:	sspush 27392;
 					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
@@ -579,9 +582,9 @@
 					return;
 		}
 
-		.method private verifyMasterPin(Ljavacard/framework/APDU;)V {
+		.method public verifyMasterPin(Ljavacard/framework/APDU;)Z 11 {
 			.stack 4;
-			.locals 3;
+			.locals 2;
 
 			.descriptor	Ljavacard/framework/APDU;	0.10;
 
@@ -592,31 +595,24 @@
 					sconst_4;
 					baload;
 					sstore_3;
-					aload_1;
-					invokevirtual 22;		// setIncomingAndReceive()S
-					s2b;
-					sstore 4;
 					sload_3;
 					sconst_5;
-					if_scmpne L2;
-				L1:	sload 4;
-					sconst_5;
-					if_scmpeq L3;
-				L2:	sspush 26368;
+					if_scmpeq L2;
+				L1:	sspush 26368;
 					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
-				L3:	getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
+				L2:	getfield_a_this 1;		// reference AccessControllerApplet/AccessControllerAppletClass.pin
 					aload_2;
 					sconst_5;
-					sload 4;
+					sload_3;
 					invokevirtual 31;		// check([BSB)Z
-					ifne L5;
-				L4:	sspush 25344;
-					invokestatic 13;		// javacard/framework/ISOException.throwIt(S)V
-					goto L6;
-				L5:	aload_0;
+					ifne L4;
+				L3:	sconst_0;
+					sreturn;
+				L4:	aload_0;
 					sconst_1;
 					putfield_b 0;		// boolean AccessControllerApplet/AccessControllerAppletClass.MASTER_PIN_AUTHENTICATED
-				L6:	return;
+					sconst_1;
+					sreturn;
 		}
 
 	}
