@@ -1,0 +1,88 @@
+// converted by version 1.3
+// on Thu Feb 09 16:13:20 CET 2023
+
+.package share {
+	.aid 0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x2;
+	.version 1.0;
+
+	.imports {
+		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.3;		//javacard/framework
+	}
+
+	.interface public abstract AccessControllerAppletInterface 0 {
+
+		.shareable;
+
+		.superInterfaces {
+			1.2;		// javacard/framework/Shareable
+		}
+
+		.method public abstract verifyPassword(Ljavacard/framework/APDU;)Z 0 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+		.method public abstract verifyMasterPassword(Ljavacard/framework/APDU;)Z 1 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+		.method public abstract getACRAuthorisation(Ljavacard/framework/APDU;)Z 2 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+		.method public abstract verifyMasterPin(Ljavacard/framework/APDU;)Z 3 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+	}
+
+	.interface public abstract ActionAppletInterface 1 {
+
+		.shareable;
+
+		.superInterfaces {
+			1.2;		// javacard/framework/Shareable
+		}
+
+		.method public abstract sendACRRequest(Ljavacard/framework/APDU;)Z 0 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+	}
+
+	.interface public abstract ClockInAppletInterface 2 {
+
+		.shareable;
+
+		.superInterfaces {
+			1.2;		// javacard/framework/Shareable
+		}
+
+		.method public abstract clockInRequest(Ljavacard/framework/APDU;)Z 0 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+	}
+
+	.interface public abstract WalletRUAppletInterface 3 {
+
+		.shareable;
+
+		.superInterfaces {
+			1.2;		// javacard/framework/Shareable
+		}
+
+		.method public abstract sendTransactionRequest(Ljavacard/framework/APDU;)Z 0 {
+			.descriptor	Ljavacard/framework/APDU;	1.10;
+
+		}
+
+	}
+
+}

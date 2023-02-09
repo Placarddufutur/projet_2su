@@ -1,0 +1,627 @@
+// converted by version 1.3
+// on Thu Feb 09 16:13:39 CET 2023
+
+.package ClockInApplet {
+	.aid 0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x5;
+	.version 1.0;
+
+	.imports {
+		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.3;		//javacard/framework
+		0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x2 1.0;		//share
+		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
+	}
+
+	.applet {
+		0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x5:0x0 ClockInAppletClass;
+	}
+
+	.constantPool {
+		// 0
+		instanceFieldRef byte[] ClockInAppletClass/clockInLog;
+		// 1
+		instanceFieldRef short ClockInAppletClass/rows;
+		// 2
+		staticMethodRef 0.3.0()V;		// javacard/framework/Applet.<init>()V
+		// 3
+		classRef ClockInAppletClass;
+		// 4
+		staticMethodRef ClockInAppletClass/<init>()V;
+		// 5
+		virtualMethodRef 0.3.1()V;		// register()V
+		// 6
+		staticMethodRef ClockInAppletClass/setSchedule(BBBB)V;
+		// 7
+		staticMethodRef 0.7.1(S)V;		// javacard/framework/ISOException.throwIt(S)V
+		// 8
+		virtualMethodRef 0.3.3()Z;		// selectingApplet()Z
+		// 9
+		virtualMethodRef 0.10.1()[B;		// getBuffer()[B
+		// 10
+		staticMethodRef ClockInAppletClass/getClockInLogs(Ljavacard/framework/APDU;)V;
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+		// 11
+		staticFieldRef byte[] ClockInAppletClass/schedule;
+		// 12
+		staticMethodRef 0.16.2([BS[BSS)S;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+		// 13
+		virtualMethodRef ClockInAppletClass/addClockInLogRow([B)V;
+		// 14
+		staticMethodRef ClockInAppletClass/getSchedule(BB)[B;
+		// 15
+		virtualMethodRef ClockInAppletClass/addClockInLogValue(S[B)V;
+		// 16
+		virtualMethodRef 0.10.7()S;		// setOutgoing()S
+		// 17
+		virtualMethodRef 0.10.9(S)V;		// setOutgoingLength(S)V
+		// 18
+		virtualMethodRef 0.10.4(SS)V;		// sendBytes(SS)V
+	}
+
+	.class public ClockInAppletClass 0 extends 0.3 {		// extends javacard/framework/Applet
+
+		.shareable;
+
+		.fields {
+			private byte[] clockInLog 0;		// [B
+			private short rows 1;		// S
+			private static final byte GET_CLOCK_IN_LOGS = 81;		// B
+			private static final short SW_INITIALIZATION_ERROR = 25601;		// S
+			private static final short SW_CLOCK_IN_ERROR = 25602;		// S
+			private static final byte NUM_DAYS = 5;		// B
+			private static final byte NUM_HOURS = 8;		// B
+			private static final byte NUM_DISCIPLINE_LETTERS = 10;		// B
+			private static byte[] schedule = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// [B
+			private static final short NUM_CLOCK_IN_LOG_MESSAGE = 13;		// S
+			static final byte ClockIn_CLA = -128;		// B
+		}
+
+		.publicMethodTable 5 {
+			equals(Ljava/lang/Object;)Z;
+			register()V;
+			register([BSB)V;
+			selectingApplet()Z;
+			deselect()V;
+			getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable;;
+			select()Z;
+			process(Ljavacard/framework/APDU;)V;
+			addClockInLogRow([B)V;
+			getClockInLogValue(S)[B;
+			addClockInLogValue(S[B)V;
+			clockInRequest(Ljavacard/framework/APDU;)Z;
+		}
+
+		.packageMethodTable 0 {
+		}
+
+		.implementedInterfaceInfoTable { 
+			.interface 0.2 { 		// javacard/framework/Shareable
+			}
+
+			.interface 1.2 { 		// share/ClockInAppletInterface
+				11;		// clockInRequest(Ljavacard/framework/APDU;)Z
+			}
+
+		}
+
+		.method private <init>()V {
+			.stack 2;
+			.locals 0;
+
+				L0:	aload_0;
+					invokespecial 2;		// javacard/framework/Applet.<init>()V
+					aload_0;
+					bspush 13;
+					newarray 11;
+					putfield_a 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					aload_0;
+					sconst_0;
+					putfield_s 1;		// short ClockInApplet/ClockInAppletClass.rows
+					return;
+		}
+
+		.method public static install([BSB)V 0 {
+			.stack 4;
+			.locals 3;
+
+				L0:	sconst_0;
+					sstore_3;
+					goto_w L20;
+				L1:	sconst_0;
+					sstore 4;
+					goto_w L18;
+				L2:	sconst_0;
+					sstore 5;
+					goto_w L16;
+				L3:	sload 5;
+					stableswitch L14 0 9 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13;
+				L4:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 66;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L5:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 105;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L6:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 112;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L7:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 66;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L8:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 105;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L9:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 112;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L10:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 66;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L11:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 111;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L12:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 117;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L13:	sload_3;
+					sload 4;
+					sload 5;
+					bspush 112;
+					invokestatic 6;		// ClockInApplet/ClockInAppletClass.setSchedule(BBBB)V
+					goto L15;
+				L14:	sspush 25601;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+				L15:	sload 5;
+					sconst_1;
+					sadd;
+					s2b;
+					sstore 5;
+				L16:	sload 5;
+					bspush 10;
+					if_scmplt_w L3;
+				L17:	sload 4;
+					sconst_1;
+					sadd;
+					s2b;
+					sstore 4;
+				L18:	sload 4;
+					bspush 8;
+					if_scmplt_w L2;
+				L19:	sload_3;
+					sconst_1;
+					sadd;
+					s2b;
+					sstore_3;
+				L20:	sload_3;
+					sconst_5;
+					if_scmplt_w L1;
+				L21:	new 3;		// ClockInApplet/ClockInAppletClass
+					dup;
+					invokespecial 4;		// ClockInApplet/ClockInAppletClass.<init>()V
+					invokevirtual 5;		// register()V
+					return;
+		}
+
+		.method public getShareableInterfaceObject(Ljavacard/framework/AID;B)Ljavacard/framework/Shareable; 5 {
+			.stack 1;
+			.locals 0;
+
+			.descriptor	Ljavacard/framework/AID;	0.6;
+			.descriptor	Ljavacard/framework/Shareable;	0.2;
+
+				L0:	aload_0;
+					areturn;
+		}
+
+		.method public process(Ljavacard/framework/APDU;)V 7 {
+			.stack 2;
+			.locals 3;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_0;
+					invokevirtual 8;		// selectingApplet()Z
+					ifeq L2;
+				L1:	return;
+				L2:	aload_1;
+					invokevirtual 9;		// getBuffer()[B
+					astore_2;
+					aload_2;
+					sconst_0;
+					baload;
+					sspush 255;
+					sand;
+					s2b;
+					sstore_3;
+					aload_2;
+					sconst_1;
+					baload;
+					sspush 255;
+					sand;
+					s2b;
+					sstore 4;
+					sload_3;
+					bspush -128;
+					if_scmpeq L4;
+				L3:	sspush 28160;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+				L4:	sload 4;
+					stableswitch L6 81 81 L5;
+				L5:	aload_0;
+					aload_1;
+					invokespecial 10;		// ClockInApplet/ClockInAppletClass.getClockInLogs(Ljavacard/framework/APDU;)V
+					goto L7;
+				L6:	sspush 27904;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+				L7:	return;
+		}
+
+		.method private static setSchedule(BBBB)V {
+			.stack 3;
+			.locals 1;
+
+				L0:	sload_0;
+					bspush 8;
+					smul;
+					bspush 10;
+					smul;
+					sload_1;
+					bspush 10;
+					smul;
+					sadd;
+					sload_2;
+					sadd;
+					sstore 4;
+					getstatic_a 11;		// reference ClockInApplet/ClockInAppletClass.schedule
+					sload 4;
+					sload_3;
+					bastore;
+					return;
+		}
+
+		.method private static getSchedule(BB)[B {
+			.stack 5;
+			.locals 2;
+
+				L0:	sload_0;
+					bspush 8;
+					smul;
+					bspush 10;
+					smul;
+					sload_1;
+					bspush 10;
+					smul;
+					sadd;
+					sstore_2;
+					bspush 10;
+					newarray 11;
+					astore_3;
+					getstatic_a 11;		// reference ClockInApplet/ClockInAppletClass.schedule
+					sload_2;
+					aload_3;
+					sconst_0;
+					bspush 10;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_3;
+					areturn;
+		}
+
+		.method public addClockInLogRow([B)V 8 {
+			.stack 5;
+			.locals 1;
+
+				L0:	getfield_s_this 1;		// short ClockInApplet/ClockInAppletClass.rows
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					bspush 13;
+					sdiv;
+					if_scmpne L2;
+				L1:	getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					bspush 13;
+					sadd;
+					newarray 11;
+					astore_2;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					sconst_0;
+					aload_2;
+					sconst_0;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_0;
+					aload_2;
+					putfield_a 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+				L2:	aload_1;
+					sconst_0;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					getfield_s_this 1;		// short ClockInApplet/ClockInAppletClass.rows
+					bspush 13;
+					smul;
+					bspush 13;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload_0;
+					dup;
+					getfield_s 1;		// short ClockInApplet/ClockInAppletClass.rows
+					sconst_1;
+					sadd;
+					putfield_s 1;		// short ClockInApplet/ClockInAppletClass.rows
+					return;
+		}
+
+		.method public getClockInLogValue(S)[B 9 {
+			.stack 5;
+			.locals 2;
+
+				L0:	bspush 13;
+					newarray 11;
+					astore_2;
+					sconst_0;
+					sstore_3;
+					goto L2;
+				L1:	aload_2;
+					sload_3;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					sload_1;
+					bspush 13;
+					smul;
+					sload_3;
+					sadd;
+					baload;
+					bastore;
+					sinc 3 1;
+				L2:	sload_3;
+					bspush 13;
+					if_scmplt L1;
+				L3:	aload_2;
+					areturn;
+		}
+
+		.method public addClockInLogValue(S[B)V 10 {
+			.stack 5;
+			.locals 0;
+
+				L0:	sload_1;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					bspush 13;
+					sdiv;
+					if_scmpne L2;
+				L1:	aload_0;
+					aload_2;
+					invokevirtual 13;		// addClockInLogRow([B)V
+					goto L3;
+				L2:	aload_2;
+					sconst_0;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					sload_1;
+					bspush 13;
+					smul;
+					bspush 13;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+				L3:	return;
+		}
+
+		.method public clockInRequest(Ljavacard/framework/APDU;)Z 11 {
+			.stack 5;
+			.locals 6;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 9;		// getBuffer()[B
+					astore_2;
+					aload_2;
+					sconst_4;
+					baload;
+					sstore_3;
+					sconst_0;
+					sstore 4;
+					bspush 10;
+					newarray 11;
+					astore 5;
+					bspush 13;
+					newarray 11;
+					astore 6;
+					sload_3;
+					sconst_2;
+					if_scmpeq L2;
+				L1:	sspush 26368;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+					sconst_0;
+					sreturn;
+				L2:	sconst_2;
+					newarray 11;
+					astore 7;
+					aload_2;
+					sconst_5;
+					aload 7;
+					sconst_0;
+					sload_3;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload 7;
+					sconst_1;
+					baload;
+					bspush 8;
+					ssub;
+					s2b;
+					bspush 6;
+					if_scmpge L4;
+				L3:	aload 7;
+					sconst_0;
+					baload;
+					aload 7;
+					sconst_1;
+					baload;
+					bspush 8;
+					ssub;
+					s2b;
+					invokestatic 14;		// ClockInApplet/ClockInAppletClass.getSchedule(BB)[B
+					astore 5;
+					sconst_1;
+					sstore 4;
+					goto L5;
+				L4:	aload 7;
+					sconst_0;
+					baload;
+					aload 7;
+					sconst_1;
+					baload;
+					bspush 10;
+					ssub;
+					s2b;
+					invokestatic 14;		// ClockInApplet/ClockInAppletClass.getSchedule(BB)[B
+					astore 5;
+					sconst_1;
+					sstore 4;
+				L5:	aload 7;
+					sconst_0;
+					aload 6;
+					sconst_0;
+					aload 7;
+					arraylength;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload 5;
+					sconst_0;
+					aload 6;
+					aload 7;
+					arraylength;
+					aload 5;
+					arraylength;
+					invokestatic 12;		// javacard/framework/Util.arrayCopyNonAtomic([BS[BSS)S
+					pop;
+					aload 6;
+					bspush 12;
+					sconst_1;
+					bastore;
+					aload_0;
+					getfield_s_this 1;		// short ClockInApplet/ClockInAppletClass.rows
+					aload 6;
+					invokevirtual 15;		// addClockInLogValue(S[B)V
+					sload 4;
+					ifne L7;
+				L6:	sspush 25602;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+					sload 4;
+					sreturn;
+				L7:	sload 4;
+					sreturn;
+		}
+
+		.method private getClockInLogs(Ljavacard/framework/APDU;)V {
+			.stack 4;
+			.locals 4;
+
+			.descriptor	Ljavacard/framework/APDU;	0.10;
+
+				L0:	aload_1;
+					invokevirtual 9;		// getBuffer()[B
+					astore_2;
+					aload_1;
+					invokevirtual 16;		// setOutgoing()S
+					sstore_3;
+					sload_3;
+					sconst_2;
+					if_scmpge L2;
+				L1:	sspush 26368;
+					invokestatic 7;		// javacard/framework/ISOException.throwIt(S)V
+				L2:	aload_1;
+					bspush 117;
+					invokevirtual 17;		// setOutgoingLength(S)V
+					getfield_s_this 1;		// short ClockInApplet/ClockInAppletClass.rows
+					bspush 9;
+					if_scmple L7;
+				L3:	getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					bspush 117;
+					ssub;
+					sstore 4;
+					goto L5;
+				L4:	aload_2;
+					sload 4;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					bspush 117;
+					ssub;
+					ssub;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					sload 4;
+					baload;
+					bastore;
+					sinc 4 1;
+				L5:	sload 4;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					if_scmplt L4;
+				L6:	goto L15;
+				L7:	sconst_0;
+					sstore 4;
+					goto L11;
+				L8:	sload 4;
+					bspush 117;
+					if_scmpne L10;
+				L9:	goto L12;
+				L10:	aload_2;
+					sload 4;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					sload 4;
+					baload;
+					bastore;
+					sinc 4 1;
+				L11:	sload 4;
+					getfield_a_this 0;		// reference ClockInApplet/ClockInAppletClass.clockInLog
+					arraylength;
+					if_scmplt L8;
+				L12:	sload 4;
+					sstore 5;
+					goto L14;
+				L13:	aload_2;
+					sload 5;
+					sconst_m1;
+					bastore;
+					sinc 5 1;
+				L14:	sload 5;
+					bspush 117;
+					if_scmplt L13;
+				L15:	aload_1;
+					sconst_0;
+					bspush 117;
+					invokevirtual 18;		// sendBytes(SS)V
+					return;
+		}
+
+	}
+
+}
